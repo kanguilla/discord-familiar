@@ -17,6 +17,12 @@ function init() {
     client = new discord_js_1.Client({ disableEveryone: true });
     client.on("ready", () => __awaiter(this, void 0, void 0, function* () {
         console.log("Familiar wakes up.");
+        client.user.setPresence({
+            game: {
+                name: '>>help',
+                type: "STREAMING"
+            }
+        });
     }));
     client.on("message", (message) => __awaiter(this, void 0, void 0, function* () {
         if (message.author.bot)
@@ -34,14 +40,20 @@ function init() {
 }
 init();
 function parseCmd(message, cmd, args) {
+    var admin = message.guild.member(message.author).hasPermission("ADMINISTRATOR");
     switch (cmd) {
+        case "help":
+            message.channel.send("Hello " + message.author.username + ".");
+            return;
         case "hello":
             message.channel.send("Hello " + message.author.username + ".");
             return;
         case "calendar":
-            var calendar = new calendar_1.Calendar();
-            calendar.myEvents(client);
-            break;
+            if (admin) {
+                var calendar = new calendar_1.Calendar();
+                calendar.updateGCALEvents(client);
+                break;
+            }
         default:
             message.channel.send("I don't know how to do that...yet.");
             return;

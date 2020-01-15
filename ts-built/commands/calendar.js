@@ -12,10 +12,9 @@ const fs = __importStar(require("fs"));
 const readline = __importStar(require("readline"));
 class Calendar {
     constructor() {
-        this.clientId = 'YOUR_CLIENT_ID';
-        this.apiKey = 'YOUR_API_KEY';
         this.SCOPES = 'https://www.googleapis.com/auth/calendar';
         this.TOKEN_PATH = 'token.json';
+        this.CALENDAR_ID = "uj1gn8v23a59g3rpf11gdspa1c@group.calendar.google.com";
         this.calendar = googleapis_1.google.calendar('v3');
         this.months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     }
@@ -37,67 +36,44 @@ class Calendar {
         var hourString = "0" + hour;
         if (hourString.length > 2)
             hourString = hourString.substr(1);
-        var output = splitTime[3] + "-" + monthString + "-" + dayString + "T" + hourString + ":" + minute + ":00-00:00";
-        console.error(output);
+        var output = splitTime[3] + "-" + monthString + "-" + dayString + "T" + hourString + ":" + minute + ":00-05:00";
         return output;
     }
-    myEvents(client) {
-        var eventsChannel = client.channels.get("663604642449588254");
-        var oAuth2Client;
+    updateGCALEvents(client) {
+        var eventsChannel = client.channels.get("657828168077541376");
         if (eventsChannel) {
             eventsChannel.fetchMessages().then(value => {
-                value.forEach(element => {
-                    element.embeds.forEach(embed => {
-                        var time = embed.fields[0].value;
-                        var startTime = this.convertTime(time, 0);
-                        var endTime = this.convertTime(time, 1);
-                        var event = {
-                            'summary': embed.title,
-                            'description': embed.description,
-                            'start': {
-                                'dateTime': startTime,
-                                'timeZone': 'America/New_York',
-                            },
-                            'end': {
-                                'dateTime': endTime,
-                                'timeZone': 'America/New_York',
-                            }
-                        };
-                        fs.readFile(this.TOKEN_PATH, (err, token) => {
-                            const oAuth2Client = new googleapis_1.google.auth.OAuth2("162746195505-9331k9khn4tp10j8vc7um5cgeorfpotu.apps.googleusercontent.com", "ajIuwTt-mvoU4deyLtjvjWgw", "urn:ietf:wg:oauth:2.0:oob");
-                            oAuth2Client.setCredentials(JSON.parse(token.toString()));
+                var oAuth2Client = new googleapis_1.google.auth.OAuth2("162746195505-9331k9khn4tp10j8vc7um5cgeorfpotu.apps.googleusercontent.com", "ajIuwTt-mvoU4deyLtjvjWgw", "urn:ietf:wg:oauth:2.0:oob");
+                fs.readFile(this.TOKEN_PATH, (err, token) => {
+                    oAuth2Client.setCredentials(JSON.parse(token.toString()));
+                    var auth = oAuth2Client;
+                    //clear current events
+                    const calendar = googleapis_1.google.calendar({ version: 'v3', auth });
+                    calendar.calendars.clear({ calendarId: "uj1gn8v23a59g3rpf11gdspa1c@group.calendar.google.com" });
+                    //add fresh events
+                    value.forEach(element => {
+                        element.embeds.forEach(embed => {
+                            var time = embed.fields[0].value;
+                            var startTime = this.convertTime(time, 0);
+                            var endTime = this.convertTime(time, 1);
+                            var event = {
+                                'summary': embed.title,
+                                'description': embed.description,
+                                'start': {
+                                    'dateTime': startTime,
+                                    'timeZone': 'America/New_York',
+                                },
+                                'end': {
+                                    'dateTime': endTime,
+                                    'timeZone': 'America/New_York',
+                                }
+                            };
                             this.addEvent(oAuth2Client, event);
                         });
                     });
                 });
             });
         }
-        // fs.readFile(this.TOKEN_PATH, (err, token) => {
-        //     const oAuth2Client = new google.auth.OAuth2(
-        //         "162746195505-9331k9khn4tp10j8vc7um5cgeorfpotu.apps.googleusercontent.com", 
-        //         "ajIuwTt-mvoU4deyLtjvjWgw", 
-        //         "urn:ietf:wg:oauth:2.0:oob");
-        //     oAuth2Client.setCredentials(JSON.parse(token.toString()));
-        //     this.addEvent(oAuth2Client, event);
-        // });
-        // fs.readFile('credentials.json', (err, content) => {
-        //     if (err) return console.log('Error loading client secret file:', err);
-        //     // Authorize a client with credentials, then call the Google Calendar API.
-        //     var event = {
-        //         'summary': 'TEST-ignore',
-        //         'location': 'Toronto',
-        //         'description': 'Some meetup',
-        //         'start': {
-        //             'dateTime': '2020-01-25T09:00:00-07:00',
-        //             'timeZone': 'America/New_York',
-        //         },
-        //         'end': {
-        //             'dateTime': '2020-01-25T09:00:00-12:00',
-        //             'timeZone': 'America/New_York',
-        //         }
-        //     };
-        //     authorize(JSON.parse(content.toString()), addEvent, event);
-        // });
     }
     /**
      * Create an OAuth2 client with the given credentials, and then execute the
@@ -155,7 +131,7 @@ class Calendar {
     listEvents(auth) {
         const calendar = googleapis_1.google.calendar({ version: 'v3', auth });
         calendar.events.list({
-            calendarId: 'mdojifv6ak57hrgnee80rfngp8@group.calendar.google.com',
+            calendarId: this.CALENDAR_ID,
             timeMin: (new Date()).toISOString(),
             maxResults: 10,
             singleEvents: true,
@@ -181,15 +157,15 @@ class Calendar {
         });
     }
     addEvent(auth, event) {
-        const calendar = googleapis_1.google.calendar({ version: 'v3', auth });
+        var calendar = googleapis_1.google.calendar({ version: 'v3', auth });
         calendar.events.insert({
-            calendarId: 'mdojifv6ak57hrgnee80rfngp8@group.calendar.google.com',
+            calendarId: this.CALENDAR_ID,
             requestBody: event,
-        }, (err, event) => {
+        }, (err, result) => {
             if (err)
-                return console.log('The API returned an error: ' + err);
-            if (event) {
-                console.log('Event created: %s', event.htmlLink);
+                return console.log('The API returned an error creating event for s%: s%', event.summary, err);
+            if (result) {
+                console.log('Event created for s%: %s', event.summary, result.htmlLink);
             }
         });
     }
