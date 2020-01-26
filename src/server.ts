@@ -40,10 +40,11 @@ function init() {
                     parseCmd(message, cmd.substring(PREFIX.length), args);
                 }
             } else {
-                if (message.channel.id = EVENT_CHANNEL_ID) {
-
-                    calendar.clearAllEvents();
-                    calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client);
+                if (message.channel.id === EVENT_CHANNEL_ID) {
+                    console.log("New event posted: " + message);
+                    calendar.clearAllEvents().then(value => {
+                        calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client);
+                    });
 
                     // message.embeds.forEach(embed => {
                     //     calendar.addEvent(embed);
@@ -62,17 +63,17 @@ function parseCmd(message: Message, cmd: String, args: String[]) {
     switch (cmd) {
         case "help":
             message.channel.send("Hello " + message.author.username + ". Right now, I am configured to:\n" + SKILLS.join("\n  >"));
-            return;
+            break;
         case "hello":
             message.channel.send("Hello " + message.author.username + ".")
-            return;
+            break;
         case "reset":
             if (admin) {
                 calendar.clearAllEvents().then(value => {
                     calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client);
                 });
-                break;
             }
+            break;
         default:
             message.channel.send("I don't know how to do that...yet.")
             return;
