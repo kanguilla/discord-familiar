@@ -11,47 +11,67 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const calendar_1 = require("./commands/calendar");
-var prefix = ">>";
-var client = new discord_js_1.Client({ disableEveryone: true });
+var client;
+var EVENT_CHANNEL_ID = '657828168077541376';
+var PREFIX = ">>";
+var CALENDAR_ID = 'torontodiscord@gmail.com';
+var SKILLS = [
+    "  > manage google calendar events @ http://tiny.cc/od46iz"
+];
+//var CALENDAR_ID = "j1s1e3d9p5s2f8l9d1uq13evbc@group.calendar.google.com";
+var calendar;
 function init() {
-    client = new discord_js_1.Client({ disableEveryone: true });
-    client.on("ready", () => __awaiter(this, void 0, void 0, function* () {
-        console.log("Familiar wakes up.");
-        client.user.setPresence({
-            game: {
-                name: '>>help',
-                type: "STREAMING"
+    calendar_1.Calendar.createInstance(CALENDAR_ID).then(value => {
+        calendar = value;
+        client = new discord_js_1.Client({ disableEveryone: true });
+        client.on("ready", () => __awaiter(this, void 0, void 0, function* () {
+            console.log("Familiar wakes up.");
+            client.user.setPresence({
+                game: {
+                    name: '>>help',
+                    type: "STREAMING"
+                }
+            });
+        }));
+        client.on("message", (message) => __awaiter(this, void 0, void 0, function* () {
+            if (!message.author.bot) {
+                if (message.channel.type === "dm")
+                    return;
+                var messageArray = message.content.split(" ");
+                var cmd = messageArray[0];
+                var args = messageArray.slice(1);
+                if (cmd.startsWith(PREFIX)) {
+                    parseCmd(message, cmd.substring(PREFIX.length), args);
+                }
             }
-        });
-    }));
-    client.on("message", (message) => __awaiter(this, void 0, void 0, function* () {
-        if (message.author.bot)
-            return;
-        if (message.channel.type === "dm")
-            return;
-        var messageArray = message.content.split(" ");
-        var cmd = messageArray[0];
-        var args = messageArray.slice(1);
-        if (cmd.startsWith(prefix)) {
-            parseCmd(message, cmd.substring(prefix.length), args);
-        }
-    }));
-    client.login("NjYzMjMxMzY0MjUzODc2MjI1.XhK3TA.DhJefDCLaMqPGl2RJy8d2z3F714");
+            else {
+                if (message.channel.id = EVENT_CHANNEL_ID) {
+                    calendar.clearAllEvents();
+                    calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client);
+                    // message.embeds.forEach(embed => {
+                    //     calendar.addEvent(embed);
+                    // });
+                }
+            }
+        }));
+        client.login("NjYzMjMxMzY0MjUzODc2MjI1.XhK3TA.DhJefDCLaMqPGl2RJy8d2z3F714");
+    });
 }
 init();
 function parseCmd(message, cmd, args) {
     var admin = message.guild.member(message.author).hasPermission("ADMINISTRATOR");
     switch (cmd) {
         case "help":
-            message.channel.send("Hello " + message.author.username + ".");
+            message.channel.send("Hello " + message.author.username + ". Right now, I am configured to:\n" + SKILLS.join("\n  >"));
             return;
         case "hello":
             message.channel.send("Hello " + message.author.username + ".");
             return;
-        case "calendar":
+        case "reset":
             if (admin) {
-                var calendar = new calendar_1.Calendar();
-                calendar.updateGCALEvents(client);
+                calendar.clearAllEvents().then(value => {
+                    calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client);
+                });
                 break;
             }
         default:
