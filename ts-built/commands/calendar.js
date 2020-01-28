@@ -1,4 +1,13 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -80,16 +89,19 @@ class Calendar {
         return output;
     }
     postEventsFromChannel(channelId, client) {
-        var eventsChannel = client.channels.get(channelId);
-        if (eventsChannel) {
-            eventsChannel.fetchMessages().then(value => {
-                value.forEach(element => {
-                    element.embeds.forEach(embed => {
-                        this.addEvent(embed);
+        return new Promise((resolve, reject) => {
+            var eventsChannel = client.channels.get(channelId);
+            if (eventsChannel) {
+                eventsChannel.fetchMessages().then(value => {
+                    value.forEach(element => {
+                        element.embeds.forEach((embed) => __awaiter(this, void 0, void 0, function* () {
+                            yield this.addEvent(embed);
+                        }));
                     });
                 });
-            });
-        }
+            }
+            resolve();
+        });
     }
     listEvents(auth, limit) {
         const calendar = googleapis_1.google.calendar({ version: 'v3', auth });
@@ -120,32 +132,37 @@ class Calendar {
         });
     }
     addEvent(embed) {
-        var time = embed.fields[0].value;
-        var startTime = this.convertTime(time, 0);
-        var endTime = this.convertTime(time, 1);
-        var event = {
-            'summary': embed.title,
-            'description': embed.description,
-            'start': {
-                'dateTime': startTime,
-                'timeZone': 'America/New_York',
-            },
-            'end': {
-                'dateTime': endTime,
-                'timeZone': 'America/New_York',
-            }
-        };
-        var auth = this.oAuth2Client;
-        var calendar = googleapis_1.google.calendar({ version: 'v3', auth });
-        calendar.events.insert({
-            calendarId: this.calendarId,
-            requestBody: event,
-        }, (err, result) => {
-            if (err)
-                return console.log('The API returned an error creating event for ', event.summary);
-            if (result) {
-                console.log('Event created for %s: %s', event.summary, result.htmlLink);
-            }
+        return new Promise((resolve, reject) => {
+            var time = embed.fields[0].value;
+            var startTime = this.convertTime(time, 0);
+            var endTime = this.convertTime(time, 1);
+            var event = {
+                'summary': embed.title,
+                'description': embed.description,
+                'start': {
+                    'dateTime': startTime,
+                    'timeZone': 'America/New_York',
+                },
+                'end': {
+                    'dateTime': endTime,
+                    'timeZone': 'America/New_York',
+                }
+            };
+            var auth = this.oAuth2Client;
+            var calendar = googleapis_1.google.calendar({ version: 'v3', auth });
+            calendar.events.insert({
+                calendarId: this.calendarId,
+                requestBody: event,
+            }, (err, result) => {
+                if (err) {
+                    console.error('The API returned an error creating event for ' + event.summary);
+                    reject(err);
+                }
+                if (result) {
+                    console.log('Event created for %s: %s', event.summary, result.htmlLink);
+                    resolve(result);
+                }
+            });
         });
     }
     clearAllEvents() {

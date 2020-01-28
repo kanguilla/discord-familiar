@@ -50,16 +50,19 @@ export class Calendar implements Command {
     }
 
     public postEventsFromChannel(channelId: string, client: Client) {
-        var eventsChannel = client.channels.get(channelId) as TextChannel;
-        if (eventsChannel) {
-            eventsChannel.fetchMessages().then(value => {
-                value.forEach(element => {
-                    element.embeds.forEach(embed => {
-                        this.addEvent(embed);
+        return new Promise((resolve, reject) => {
+            var eventsChannel = client.channels.get(channelId) as TextChannel;
+            if (eventsChannel) {
+                eventsChannel.fetchMessages().then(value => {
+                    value.forEach(element => {
+                        element.embeds.forEach(async embed => {
+                            await this.addEvent(embed);
+                        });
                     });
                 });
-            });
-        }
+            }
+            resolve();
+        });
     }
 
     private listEvents(auth: any, limit) {
@@ -90,33 +93,39 @@ export class Calendar implements Command {
     }
 
     public addEvent(embed) {
-        var time: string = embed.fields[0].value;
-        var startTime = this.convertTime(time, 0);
-        var endTime = this.convertTime(time, 1);
-
-        var event = {
-            'summary': embed.title,
-            'description': embed.description,
-            'start': {
-                'dateTime': startTime,
-                'timeZone': 'America/New_York',
-            },
-            'end': {
-                'dateTime': endTime,
-                'timeZone': 'America/New_York',
-            }
-        };
-
-        var auth = this.oAuth2Client;
-        var calendar = google.calendar({ version: 'v3', auth });
-        calendar.events.insert({
-            calendarId: this.calendarId,
-            requestBody: event,
-        }, (err: any, result: any) => {
-            if (err) return console.log('The API returned an error creating event for ', event.summary);
-            if (result) {
-                console.log('Event created for %s: %s', event.summary, result.htmlLink);
-            }
+        return new Promise((resolve, reject) => {
+            var time: string = embed.fields[0].value;
+            var startTime = this.convertTime(time, 0);
+            var endTime = this.convertTime(time, 1);
+    
+            var event = {
+                'summary': embed.title,
+                'description': embed.description,
+                'start': {
+                    'dateTime': startTime,
+                    'timeZone': 'America/New_York',
+                },
+                'end': {
+                    'dateTime': endTime,
+                    'timeZone': 'America/New_York',
+                }
+            };
+    
+            var auth = this.oAuth2Client;
+            var calendar = google.calendar({ version: 'v3', auth });
+            calendar.events.insert({
+                calendarId: this.calendarId,
+                requestBody: event,
+            }, (err: any, result: any) => {
+                if (err){
+                    console.error('The API returned an error creating event for ' + event.summary);
+                    reject(err)
+                }
+                if (result) {
+                    console.log('Event created for %s: %s', event.summary, result.htmlLink);
+                    resolve(result);
+                }
+            });
         });
     }
 

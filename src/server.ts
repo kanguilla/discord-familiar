@@ -12,6 +12,7 @@ var SKILLS = [
 //var CALENDAR_ID = "j1s1e3d9p5s2f8l9d1uq13evbc@group.calendar.google.com";
 
 var calendar: Calendar;
+var adding:boolean = false;
 
 function init() {
 
@@ -40,10 +41,14 @@ function init() {
                     parseCmd(message, cmd.substring(PREFIX.length), args);
                 }
             } else {
-                if (message.channel.id === EVENT_CHANNEL_ID) {
+                if (message.channel.id === EVENT_CHANNEL_ID && !adding) {
+                    adding = true;
                     console.log("New event posted: " + message);
+                    
                     calendar.clearAllEvents().then(value => {
-                        calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client);
+                        calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client).then(value => {
+                            adding = false;
+                        });
                     });
 
                     // message.embeds.forEach(embed => {

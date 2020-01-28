@@ -20,6 +20,7 @@ var SKILLS = [
 ];
 //var CALENDAR_ID = "j1s1e3d9p5s2f8l9d1uq13evbc@group.calendar.google.com";
 var calendar;
+var adding = false;
 function init() {
     calendar_1.Calendar.createInstance(CALENDAR_ID).then(value => {
         calendar = value;
@@ -45,11 +46,13 @@ function init() {
                 }
             }
             else {
-                if (message.channel.id === EVENT_CHANNEL_ID) {
-                    console.log(message.channel.id + " / " + EVENT_CHANNEL_ID);
+                if (message.channel.id === EVENT_CHANNEL_ID && !adding) {
+                    adding = true;
                     console.log("New event posted: " + message);
                     calendar.clearAllEvents().then(value => {
-                        calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client);
+                        calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client).then(value => {
+                            adding = false;
+                        });
                     });
                     // message.embeds.forEach(embed => {
                     //     calendar.addEvent(embed);
