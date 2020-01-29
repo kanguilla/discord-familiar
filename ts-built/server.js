@@ -18,9 +18,13 @@ var CALENDAR_ID = 'torontodiscord@gmail.com';
 var SKILLS = [
     "  > manage google calendar events @ http://tiny.cc/od46iz"
 ];
+var TIMEOUT = 10;
 //var CALENDAR_ID = "j1s1e3d9p5s2f8l9d1uq13evbc@group.calendar.google.com";
 var calendar;
 var adding = false;
+var messageQueue;
+var events = 0;
+var timer;
 function init() {
     calendar_1.Calendar.createInstance(CALENDAR_ID).then(value => {
         calendar = value;
@@ -46,14 +50,27 @@ function init() {
                 }
             }
             else {
-                if (message.channel.id === EVENT_CHANNEL_ID && !adding) {
-                    adding = true;
-                    console.log("New event posted: " + message);
-                    calendar.clearAllEvents().then(value => {
-                        calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client).then(value => {
-                            adding = false;
-                        });
-                    });
+                if (message.channel.id === EVENT_CHANNEL_ID) {
+                    var counter = 0;
+                    clearInterval(timer);
+                    console.log("Apollo posted an event: " + message.embeds[0].title);
+                    timer = setInterval(() => {
+                        console.error("Waiting " + counter + " seconds...");
+                        counter++;
+                        if (counter > 10) {
+                            clearInterval(timer);
+                            calendar.clearAllEvents().then(value => {
+                                calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client).then(value => {
+                                    adding = false;
+                                });
+                            });
+                        }
+                    }, 1000);
+                    // calendar.clearAllEvents().then(value => {
+                    //     calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client).then(value => {
+                    //         adding = false;
+                    //     });
+                    // });
                     // message.embeds.forEach(embed => {
                     //     calendar.addEvent(embed);
                     // });
