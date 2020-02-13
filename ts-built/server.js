@@ -1,16 +1,9 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const calendar_1 = require("./commands/calendar");
+const whois_1 = require("./commands/whois");
+const affirm_1 = require("./commands/affirm");
 var client;
 var EVENT_CHANNEL_ID = '657828168077541376';
 var PREFIX = ">>";
@@ -21,15 +14,20 @@ var SKILLS = [
 var TIMEOUT = 10;
 //var CALENDAR_ID = "j1s1e3d9p5s2f8l9d1uq13evbc@group.calendar.google.com";
 var calendar;
+var affirm;
 var adding = false;
 var messageQueue;
 var events = 0;
 var timer;
 function init() {
-    calendar_1.Calendar.createInstance(CALENDAR_ID).then(value => {
-        calendar = value;
+    var promises = [];
+    promises.push(calendar_1.Calendar.createInstance(CALENDAR_ID));
+    promises.push(affirm_1.Affirm.createInstance());
+    Promise.all(promises).then(values => {
+        calendar = values[0];
+        affirm = values[1];
         client = new discord_js_1.Client({ disableEveryone: true });
-        client.on("ready", () => __awaiter(this, void 0, void 0, function* () {
+        client.on("ready", async () => {
             console.log("Familiar wakes up.");
             client.user.setPresence({
                 game: {
@@ -37,11 +35,13 @@ function init() {
                     type: "STREAMING"
                 }
             });
-        }));
-        client.on("message", (message) => __awaiter(this, void 0, void 0, function* () {
+        });
+        client.on("message", async (message) => {
             if (!message.author.bot) {
-                if (message.channel.type === "dm")
+                if (message.channel.type === "dm") {
+                    affirm.affirmMe(message);
                     return;
+                }
                 var messageArray = message.content.split(" ");
                 var cmd = messageArray[0];
                 var args = messageArray.slice(1);
@@ -66,18 +66,11 @@ function init() {
                             });
                         }
                     }, 1000);
-                    // calendar.clearAllEvents().then(value => {
-                    //     calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client).then(value => {
-                    //         adding = false;
-                    //     });
-                    // });
-                    // message.embeds.forEach(embed => {
-                    //     calendar.addEvent(embed);
-                    // });
                 }
             }
-        }));
+        });
         client.login("NjYzMjMxMzY0MjUzODc2MjI1.XhK3TA.DhJefDCLaMqPGl2RJy8d2z3F714");
+    }, reasons => {
     });
 }
 init();
@@ -85,10 +78,26 @@ function parseCmd(message, cmd, args) {
     var admin = message.guild.member(message.author).hasPermission("ADMINISTRATOR");
     switch (cmd) {
         case "help":
-            message.channel.send("Hello " + message.author.username + ". Right now, I am configured to:\n" + SKILLS.join("\n  >"));
+            message.channel.send("I'm here to help.\n> >>hello\n> >>jobs");
+            break;
+        case "jobs":
+            message.channel.send("Right now, I am configured to:\n" + SKILLS.join("\n>"));
             break;
         case "hello":
             message.channel.send("Hello " + message.author.username + ".");
+            break;
+        case "say":
+            if (args.length < 2) {
+                break;
+            }
+            whois_1.WhoIs.say(args, client);
+            break;
+        case "whois":
+            message.delete();
+            if (args.length < 1) {
+                break;
+            }
+            whois_1.WhoIs.whoIs(args, message, client);
             break;
         case "reset":
             if (admin) {

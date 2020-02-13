@@ -1,5 +1,7 @@
 import { Client, Message } from 'discord.js'
 import { Calendar } from './commands/calendar';
+import { WhoIs } from './commands/whois';
+import { Affirm } from './commands/affirm';
 
 var client: Client;
 var EVENT_CHANNEL_ID = '657828168077541376';
@@ -13,6 +15,7 @@ var TIMEOUT = 10;
 //var CALENDAR_ID = "j1s1e3d9p5s2f8l9d1uq13evbc@group.calendar.google.com";
 
 var calendar: Calendar;
+var affirm: Affirm;
 var adding: boolean = false;
 var messageQueue: Array<Message>;
 var events = 0;
@@ -20,9 +23,14 @@ var timer;
 
 function init() {
 
-    Calendar.createInstance(CALENDAR_ID).then(value => {
+    var promises: Promise<any>[] = [];
+    promises.push(Calendar.createInstance(CALENDAR_ID));
+    promises.push(Affirm.createInstance());
 
-        calendar = value as Calendar;
+    Promise.all(promises).then(values => {
+        calendar = values[0] as Calendar;
+        affirm = values[1] as Affirm;
+
         client = new Client({ disableEveryone: true });
         client.on("ready", async () => {
             console.log("Familiar wakes up.");
@@ -33,9 +41,14 @@ function init() {
                 }
             });
         });
+
         client.on("message", async (message: Message) => {
+
             if (!message.author.bot) {
-                if (message.channel.type === "dm") return;
+                if (message.channel.type === "dm") {
+                    affirm.affirmMe(message);
+                    return;
+                }
 
                 var messageArray = message.content.split(" ");
                 var cmd = messageArray[0];
@@ -66,21 +79,13 @@ function init() {
                             });
                         }
                     }, 1000);
-
-                    // calendar.clearAllEvents().then(value => {
-                    //     calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client).then(value => {
-                    //         adding = false;
-                    //     });
-                    // });
-
-                    // message.embeds.forEach(embed => {
-                    //     calendar.addEvent(embed);
-                    // });
-
                 }
             }
         });
         client.login("NjYzMjMxMzY0MjUzODc2MjI1.XhK3TA.DhJefDCLaMqPGl2RJy8d2z3F714");
+
+    }, reasons => {
+
     });
 }
 
@@ -90,10 +95,26 @@ function parseCmd(message: Message, cmd: String, args: String[]) {
     var admin = message.guild.member(message.author).hasPermission("ADMINISTRATOR");
     switch (cmd) {
         case "help":
-            message.channel.send("Hello " + message.author.username + ". Right now, I am configured to:\n" + SKILLS.join("\n  >"));
+            message.channel.send("I'm here to help.\n> >>hello\n> >>jobs");
+            break;
+        case "jobs":
+            message.channel.send("Right now, I am configured to:\n" + SKILLS.join("\n>"));
             break;
         case "hello":
             message.channel.send("Hello " + message.author.username + ".")
+            break;
+        case "say":
+            if (args.length < 2) {
+                break;
+            }
+            WhoIs.say(args, client);
+            break;
+        case "whois":
+            message.delete();
+            if (args.length < 1) {
+                break;
+            }
+            WhoIs.whoIs(args, message, client);
             break;
         case "reset":
             if (admin) {

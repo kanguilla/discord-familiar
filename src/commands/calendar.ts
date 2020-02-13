@@ -53,7 +53,7 @@ export class Calendar implements Command {
         return new Promise((resolve, reject) => {
             var eventsChannel = client.channels.get(channelId) as TextChannel;
             if (eventsChannel) {
-                eventsChannel.fetchMessages().then(value => {
+                eventsChannel.fetchMessages({limit:100}).then(value => {
                     value.forEach(element => {
                         element.embeds.forEach(async embed => {
                             await this.addEvent(embed);
