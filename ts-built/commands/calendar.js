@@ -12,36 +12,6 @@ const fs = __importStar(require("fs"));
 class Calendar {
     constructor() {
         this.calendarId = "";
-        // /**
-        //  * Get and store new token after prompting for user authorization, and then
-        //  * execute the given callback with the authorized OAuth2 client.
-        //  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
-        //  * @param {getEventsCallback} callback The callback for the authorized client.
-        //  */
-        // private getAccessToken(oAuth2Client: any, callback: any) {
-        //     const authUrl = oAuth2Client.generateAuthUrl({
-        //         access_type: 'offline',
-        //         scope: this.SCOPES,
-        //     });
-        //     console.log('Authorize this app by visiting this url:', authUrl);
-        //     const rl = readline.createInterface({
-        //         input: process.stdin,
-        //         output: process.stdout,
-        //     });
-        //     rl.question('Enter the code from that page here: ', (code) => {
-        //         rl.close();
-        //         oAuth2Client.getToken(code, (err: any, token: any) => {
-        //             if (err) return console.error('Error retrieving access token', err);
-        //             oAuth2Client.setCredentials(token);
-        //             // Store the token to disk for later program executions
-        //             fs.writeFile(this.TOKEN_PATH, JSON.stringify(token), (err) => {
-        //                 if (err) return console.error(err);
-        //                 console.log('Token stored to', this.TOKEN_PATH);
-        //             });
-        //             callback(oAuth2Client);
-        //         });
-        //     });
-        // }
     }
     static createInstance(calendarId) {
         return new Promise((resolve, reject) => {
@@ -76,6 +46,8 @@ class Calendar {
         var hourString = "0" + hour;
         if (hourString.length > 2)
             hourString = hourString.substr(1);
+        if (hourString == '24')
+            hourString = '00';
         var output = splitTime[3] + "-" + monthString + "-" + dayString + "T" + hourString + ":" + minute + ":00-05:00";
         return output;
     }
@@ -139,6 +111,7 @@ class Calendar {
                     'timeZone': 'America/New_York',
                 }
             };
+            console.log(event);
             var auth = this.oAuth2Client;
             var calendar = googleapis_1.google.calendar({ version: 'v3', auth });
             calendar.events.insert({
@@ -150,7 +123,7 @@ class Calendar {
                     reject(err);
                 }
                 if (result) {
-                    console.log('Event created for %s: %s', event.summary, result.htmlLink);
+                    console.log('Event created for %s: %s', event.summary, event.end.dateTime);
                     resolve(result);
                 }
             });
