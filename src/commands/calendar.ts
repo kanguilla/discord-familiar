@@ -45,8 +45,10 @@ export class Calendar implements Command {
         }
         var hourString: string = "0" + hour;
         if (hourString.length > 2) hourString = hourString.substr(1);
-        if (hourString == '24') hourString = '23';
-        if (hourString == '25') hourString = '00';
+        if (hourString == '25'|| hourString == '24') {
+            hourString = '23';
+            minute = '59';
+        }
         var output = splitTime[3] + "-" + monthString + "-" + dayString + "T" + hourString + ":" + minute + ":00-05:00";
         return output;
     }
