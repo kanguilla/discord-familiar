@@ -1,18 +1,27 @@
 "use strict";
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const discord_js_1 = require("discord.js");
 const calendar_1 = require("./commands/calendar");
 const whois_1 = require("./commands/whois");
 const affirm_1 = require("./commands/affirm");
+const fs = __importStar(require("fs"));
 var client;
-var EVENT_CHANNEL_ID = '657828168077541376';
+var EVENT_CHANNEL_ID;
+var BOT_TOKEN;
 var PREFIX = ">>";
 var CALENDAR_ID = 'torontodiscord@gmail.com';
 var SKILLS = [
     "  > manage google calendar events @ http://tiny.cc/od46iz"
 ];
 var TIMEOUT = 10;
-//var CALENDAR_ID = "j1s1e3d9p5s2f8l9d1uq13evbc@group.calendar.google.com";
+var CONFIG_PATH = 'config.json';
 var calendar;
 var affirm;
 var adding = false;
@@ -23,6 +32,18 @@ function init() {
     var promises = [];
     promises.push(calendar_1.Calendar.createInstance(CALENDAR_ID));
     promises.push(affirm_1.Affirm.createInstance());
+    promises.push(new Promise((resolve, reject) => {
+        fs.readFile(CONFIG_PATH, (err, token) => {
+            if (err) {
+                reject(err);
+            }
+            var content = JSON.parse(token.toString());
+            EVENT_CHANNEL_ID = content.discord.eventChannelID;
+            BOT_TOKEN = content.discord.token;
+            console.log("Config loaded.");
+            resolve();
+        });
+    }));
     Promise.all(promises).then(values => {
         calendar = values[0];
         affirm = values[1];
@@ -69,8 +90,9 @@ function init() {
                 }
             }
         });
-        client.login("NjYzMjMxMzY0MjUzODc2MjI1.XhK3TA.DhJefDCLaMqPGl2RJy8d2z3F714");
+        client.login(BOT_TOKEN);
     }, reasons => {
+        console.error("Something went wrong while waking up:\n" + reasons.join("\n"));
     });
 }
 init();

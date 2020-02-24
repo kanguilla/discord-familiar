@@ -1,7 +1,6 @@
 import { Command } from "./command";
-import { Client, TextChannel, Message, Channel } from "discord.js";
+import { Message } from "discord.js";
 import * as fs from 'fs';
-import { dataflow } from "googleapis/build/src/apis/dataflow";
 
 export class Affirm implements Command {
 

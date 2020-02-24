@@ -2,18 +2,18 @@ import { Client, Message } from 'discord.js'
 import { Calendar } from './commands/calendar';
 import { WhoIs } from './commands/whois';
 import { Affirm } from './commands/affirm';
+import * as fs from 'fs';
 
 var client: Client;
-var EVENT_CHANNEL_ID = '657828168077541376';
+var EVENT_CHANNEL_ID;
+var BOT_TOKEN;
 var PREFIX = ">>";
 var CALENDAR_ID = 'torontodiscord@gmail.com';
 var SKILLS = [
     "  > manage google calendar events @ http://tiny.cc/od46iz"
 ];
 var TIMEOUT = 10;
-
-//var CALENDAR_ID = "j1s1e3d9p5s2f8l9d1uq13evbc@group.calendar.google.com";
-
+var CONFIG_PATH = 'config.json';
 var calendar: Calendar;
 var affirm: Affirm;
 var adding: boolean = false;
@@ -26,6 +26,20 @@ function init() {
     var promises: Promise<any>[] = [];
     promises.push(Calendar.createInstance(CALENDAR_ID));
     promises.push(Affirm.createInstance());
+
+    promises.push(new Promise((resolve, reject) => {
+        fs.readFile(CONFIG_PATH, (err, token) => {
+            if (err) {
+                reject(err);
+            }
+            var content:any = JSON.parse(token.toString());
+            EVENT_CHANNEL_ID = content.discord.eventChannelID;
+            BOT_TOKEN = content.discord.token;
+            console.log("Config loaded.")
+            resolve();
+        });
+    }));
+
 
     Promise.all(promises).then(values => {
         calendar = values[0] as Calendar;
@@ -82,10 +96,10 @@ function init() {
                 }
             }
         });
-        client.login("NjYzMjMxMzY0MjUzODc2MjI1.XhK3TA.DhJefDCLaMqPGl2RJy8d2z3F714");
+        client.login(BOT_TOKEN);
 
     }, reasons => {
-
+        console.error("Something went wrong while waking up:\n" + reasons.join("\n"))
     });
 }
 
