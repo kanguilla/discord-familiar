@@ -2,6 +2,7 @@ import { Client, Message } from 'discord.js'
 import { Calendar } from './commands/calendar';
 import { WhoIs } from './commands/whois';
 import { Affirm } from './commands/affirm';
+import { Spin } from './commands/spin';
 import * as fs from 'fs';
 
 var client: Client;
@@ -26,6 +27,7 @@ function init() {
     var promises: Promise<any>[] = [];
     promises.push(Calendar.createInstance(CALENDAR_ID));
     promises.push(Affirm.createInstance());
+    promises.push(Spin.createInstance());
 
     promises.push(new Promise((resolve, reject) => {
         fs.readFile(CONFIG_PATH, (err, token) => {

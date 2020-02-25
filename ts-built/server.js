@@ -11,6 +11,7 @@ const discord_js_1 = require("discord.js");
 const calendar_1 = require("./commands/calendar");
 const whois_1 = require("./commands/whois");
 const affirm_1 = require("./commands/affirm");
+const spin_1 = require("./commands/spin");
 const fs = __importStar(require("fs"));
 var client;
 var EVENT_CHANNEL_ID;
@@ -32,6 +33,7 @@ function init() {
     var promises = [];
     promises.push(calendar_1.Calendar.createInstance(CALENDAR_ID));
     promises.push(affirm_1.Affirm.createInstance());
+    promises.push(spin_1.Spin.createInstance());
     promises.push(new Promise((resolve, reject) => {
         fs.readFile(CONFIG_PATH, (err, token) => {
             if (err) {
