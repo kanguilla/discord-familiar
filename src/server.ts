@@ -17,6 +17,7 @@ var TIMEOUT = 10;
 var CONFIG_PATH = 'config.json';
 var calendar: Calendar;
 var affirm: Affirm;
+var spin: Spin;
 var adding: boolean = false;
 var messageQueue: Array<Message>;
 var events = 0;
@@ -34,7 +35,7 @@ function init() {
             if (err) {
                 reject(err);
             }
-            var content:any = JSON.parse(token.toString());
+            var content: any = JSON.parse(token.toString());
             EVENT_CHANNEL_ID = content.discord.eventChannelID;
             BOT_TOKEN = content.discord.token;
             console.log("Config loaded.")
@@ -46,7 +47,7 @@ function init() {
     Promise.all(promises).then(values => {
         calendar = values[0] as Calendar;
         affirm = values[1] as Affirm;
-
+        spin = values[2] as Spin;
         client = new Client({ disableEveryone: true });
         client.on("ready", async () => {
             console.log("Familiar wakes up.");
@@ -59,20 +60,26 @@ function init() {
         });
 
         client.on("message", async (message: Message) => {
-
             if (!message.author.bot) {
-                if (message.channel.type === "dm") {
-                    affirm.affirmMe(message);
-                    return;
-                }
 
                 var messageArray = message.content.split(" ");
                 var cmd = messageArray[0];
                 var args = messageArray.slice(1);
+                var isDM = message.channel.type === "dm";
+                var isCMD = cmd.startsWith(PREFIX);
 
-                if (cmd.startsWith(PREFIX)) {
+                if (isDM && isCMD) {
+                    parseDMCmd(message, cmd.substring(PREFIX.length), args);
+                }
+
+                if (!isDM && isCMD) {
                     parseCmd(message, cmd.substring(PREFIX.length), args);
                 }
+
+                if (isDM && !isCMD && message.content.toLowerCase().indexOf("affirm") > -1) {
+                    affirm.affirmMe(message);
+                }
+
             } else {
                 if (message.channel.id === EVENT_CHANNEL_ID) {
 
@@ -107,8 +114,21 @@ function init() {
 
 init();
 
+function parseDMCmd(message: Message, cmd: String, args: String[]) {
+    switch (cmd) {
+        case "spin":
+            spin.registerSpin(message, args);
+            break;
+        case "spindata":
+            spin.displaySpinData(message, args, client);
+            break;
+        default:
+            message.channel.send("I don't know how to do that...yet.")
+            return;
+    }
+}
+
 function parseCmd(message: Message, cmd: String, args: String[]) {
-    var admin = message.guild.member(message.author).hasPermission("ADMINISTRATOR");
     switch (cmd) {
         case "help":
             message.channel.send("I'm here to help.\n> >>hello\n> >>jobs");
@@ -120,19 +140,23 @@ function parseCmd(message: Message, cmd: String, args: String[]) {
             message.channel.send("Hello " + message.author.username + ".")
             break;
         case "say":
+            if (!message.member) break;
+            var admin = message.member.hasPermission("ADMINISTRATOR");
             if (args.length < 2) {
                 break;
             }
             WhoIs.say(args, client);
             break;
-        case "whois":
-            message.delete();
-            if (args.length < 1) {
-                break;
-            }
-            WhoIs.whoIs(args, message, client);
-            break;
+        // case "whois":
+        //     message.delete();
+        //     if (args.length < 1) {
+        //         break;
+        //     }
+        //     WhoIs.whoIs(args, message, client);
+        //     break;
         case "reset":
+            if (!message.member) break;
+            var admin = message.member.hasPermission("ADMINISTRATOR");
             if (admin) {
                 calendar.clearAllEvents().then(value => {
                     calendar.postEventsFromChannel(EVENT_CHANNEL_ID, client);

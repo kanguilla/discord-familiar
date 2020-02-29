@@ -113,7 +113,6 @@ class Calendar {
                     'timeZone': 'America/New_York',
                 }
             };
-            console.log(event);
             var auth = this.oAuth2Client;
             var calendar = googleapis_1.google.calendar({ version: 'v3', auth });
             calendar.events.insert({

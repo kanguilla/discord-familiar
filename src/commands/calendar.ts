@@ -114,8 +114,6 @@ export class Calendar implements Command {
                     'timeZone': 'America/New_York',
                 }
             };
-    
-            console.log(event);
 
             var auth = this.oAuth2Client;
             var calendar = google.calendar({ version: 'v3', auth });
